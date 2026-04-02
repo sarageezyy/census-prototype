@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Census - Company and team</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Nav ── */
+    #nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .nav-spacer { flex: 1; }
+    .logo {
+      width: 28px; height: 28px;
+      background: #1a1a1a; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 700; letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; }
+    .breadcrumb a { color: #6b7280; text-decoration: none; }
+    .breadcrumb a:hover { color: #1a1a1a; }
+    .breadcrumb .separator { color: #9ca3af; }
+    .breadcrumb .current { color: #1a1a1a; }
+
+    .btn-save-continue {
+      height: 36px; padding: 0 16px;
+      background: #2563eb; color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    .btn-save-continue:hover { background: #1d4ed8; }
+
+    .btn-nav-back {
+      height: 36px; padding: 0 16px;
+      background: #fff; color: #374151;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 14px; font-weight: 500; font-family: inherit;
+      cursor: pointer; transition: border-color 0.15s; white-space: nowrap;
+    }
+    .btn-nav-back:hover { border-color: #9ca3af; }
+
+    /* ── Wizard layout (sidebar + main) ── */
+    #app { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+    .layout { display: flex; flex: 1; overflow: hidden; }
+
+    .sidebar {
+      width: 460px; flex-shrink: 0;
+      background: #f3f4f6;
+      padding: 32px 40px;
+      display: flex; flex-direction: column; gap: 32px;
+      overflow-y: auto;
+    }
+    .main-panel {
+      flex: 1; background: #fff;
+      border-left: 1px solid #e5e7eb;
+      overflow-y: auto;
+    }
+
+    /* ── Info banners ── */
+    .info-banner {
+      background: #dbeafe; border-radius: 8px;
+      padding: 16px 20px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .info-banner .icon { flex-shrink: 0; margin-top: 1px; color: #2563eb; }
+    .info-banner p { font-size: 14px; color: #374151; line-height: 1.5; }
+    .info-banner a { color: #1d4ed8; text-decoration: underline; text-underline-offset: 2px; }
+    .info-banner a:hover { color: #1e40af; }
+
+    /* flat banner (no icon, lighter bg) */
+    .flat-banner {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 14px; color: #374151;
+    }
+
+    /* ── Sidebar form sections ── */
+    .form-section { display: flex; flex-direction: column; gap: 20px; }
+    .form-section h2 { font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3; }
+    .form-section .hint { font-size: 14px; color: #6b7280; margin-top: -8px; }
+    .form-section .employee-label { font-size: 14px; font-weight: 700; color: #111827; }
+
+    .text-input {
+      width: 100%; max-width: 300px; height: 40px; padding: 0 12px;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 14px; font-family: inherit; color: #1a1a1a;
+      background: #fff; outline: none; transition: border-color 0.15s;
+    }
+    .text-input:focus { border-color: #6b7280; box-shadow: 0 0 0 3px rgba(107,114,128,0.1); }
+    .text-input.number { text-align: right; }
+
+    .btn-row { display: flex; align-items: center; gap: 12px; }
+
+    .btn-next {
+      height: 40px; padding: 0 20px;
+      background: #111827; color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-next:hover { background: #374151; }
+    .btn-next:active { background: #1f2937; }
+    .btn-back {
+      height: 40px; padding: 0 4px;
+      background: none; border: none;
+      font-size: 14px; font-weight: 500; color: #374151; font-family: inherit;
+      cursor: pointer; transition: color 0.15s;
+    }
+    .btn-back:hover { color: #111827; }
+
+    .sparkle-icon { width: 20px; height: 20px; }
+
+    /* ── Wizard right-panel table ── */
+    .team-table-wrapper { padding: 32px 40px; }
+    .team-table-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .team-table-header h2 { font-size: 20px; font-weight: 700; color: #111827; }
+    .count-badge {
+      background: #2563eb; color: #fff;
+      font-size: 12px; font-weight: 600;
+      border-radius: 4px; padding: 2px 7px; line-height: 1.6;
+    }
+    .team-table { width: 100%; border-collapse: collapse; }
+    .team-table thead th {
+      text-align: left; font-size: 13px; font-weight: 500; color: #6b7280;
+      padding: 0 12px 12px; border-bottom: 1px solid #e5e7eb;
+    }
+    .team-table thead th:first-child { width: 88px; padding-left: 0; }
+    .team-table tbody tr { border-bottom: 1px solid #e5e7eb; }
+    .team-table tbody tr.active-row td { background: #f8faff; }
+    .team-table tbody td {
+      padding: 0 12px; height: 48px; vertical-align: middle;
+      font-size: 14px; color: #111827;
+    }
+    .team-table tbody td:first-child { padding-left: 0; white-space: nowrap; }
+    .row-meta { display: flex; align-items: center; gap: 8px; }
+    .you-badge {
+      background: #f3f4f6; color: #374151;
+      font-size: 11px; font-weight: 600;
+      border-radius: 4px; padding: 2px 6px; line-height: 1.5; letter-spacing: 0.02em;
+    }
+    .row-number { font-size: 14px; color: #9ca3af; min-width: 16px; text-align: right; }
+    .cell-input {
+      width: 100%; border: none; outline: none;
+      font-size: 14px; font-family: inherit; color: #111827;
+      background: transparent; padding: 0;
+    }
+    .cell-input::placeholder { color: #d1d5db; }
+    .cell-input:hover { background: #f9fafb; border-radius: 3px; }
+    .cell-input:focus { background: #f0f9ff; border-radius: 3px; outline: 1px solid #bfdbfe; }
+
+    #add-emp-row td { height: 44px; }
+    .add-emp-btn {
+      background: none; border: none; padding: 0;
+      font-size: 13px; font-weight: 500; color: #2563eb;
+      cursor: pointer; font-family: inherit;
+    }
+    .add-emp-btn:hover { text-decoration: underline; }
+
+    /* ── Checkboxes ── */
+    .row-checkbox {
+      width: 16px; height: 16px; border-radius: 3px;
+      border: 1.5px solid #d1d5db;
+      appearance: none; -webkit-appearance: none;
+      background: #fff; cursor: pointer; flex-shrink: 0;
+      position: relative; transition: background 0.1s, border-color 0.1s;
+    }
+    .row-checkbox:checked { background: #2563eb; border-color: #2563eb; }
+    .row-checkbox:checked::after {
+      content: ''; position: absolute;
+      left: 3px; top: 1px; width: 5px; height: 8px;
+      border: 2px solid #fff; border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+    .row-checkbox:hover:not(:checked) { border-color: #9ca3af; }
+
+    .select-all-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer; white-space: nowrap;
+      font-size: 12px; font-weight: 600; color: #374151;
+    }
+    .select-all-label:hover { color: #111827; }
+
+    /* ── Member details full-page layout ── */
+    .member-page {
+      flex: 1; overflow-y: auto;
+      padding: 32px 40px;
+      display: flex; flex-direction: column; gap: 28px;
+    }
+
+    /* Progress stepper */
+    .stepper {
+      display: flex; align-items: flex-start; gap: 0;
+      position: relative;
+    }
+    .stepper-step {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; flex: 1; position: relative;
+    }
+    .stepper-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 8px; left: 50%; right: -50%;
+      height: 1px; background: #d1d5db;
+      z-index: 0;
+    }
+    .stepper-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #d1d5db;
+      position: relative; z-index: 1; flex-shrink: 0;
+    }
+    .stepper-dot.active {
+      background: #fff;
+      border: 2px solid #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+    .stepper-dot.completed {
+      background: #16a34a;
+      border: 2px solid #16a34a;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stepper-dot.completed::after {
+      content: '';
+      width: 5px; height: 8px;
+      border: 2px solid #fff; border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .stepper-step.completed::after { background: #16a34a; }
+    .stepper-label {
+      font-size: 13px; color: #6b7280; text-align: center; white-space: nowrap;
+    }
+    .stepper-label.active { color: #2563eb; font-weight: 600; }
+
+    /* ── Warning banner ── */
+    .warning-banner {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .warning-banner .warn-icon { font-size: 18px; flex-shrink: 0; }
+    .warning-banner p { font-size: 14px; color: #374151; flex: 1; }
+    .btn-skip {
+      height: 34px; padding: 0 14px;
+      background: #fff; color: #111827;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .btn-skip:hover { border-color: #9ca3af; }
+
+    /* ── Health census table ── */
+    .hc-table { width: 100%; border-collapse: collapse; }
+    .hc-table thead th {
+      text-align: left; font-size: 13px; font-weight: 500; color: #374151;
+      padding: 0 16px 12px; border-bottom: 1px solid #e5e7eb;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .hc-table thead th:first-child { width: 60px; padding-left: 0; color: #6b7280; }
+    .hc-table thead th.col-dep { border-right: 1px solid #d1d5db; }
+
+    .hc-table tbody tr { border-bottom: 1px solid #e5e7eb; }
+    .hc-table tbody td {
+      padding: 0 16px; height: 52px; vertical-align: middle;
+      font-size: 14px; color: #111827; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hc-table tbody td:first-child { padding-left: 0; color: #9ca3af; font-size: 13px; }
+    .hc-table tbody td.col-dep { border-right: 1px solid #d1d5db; }
+
+    /* Dependent sub-rows */
+    .hc-table tbody tr.dep-row td.dep-left {
+      background: #f3f4f6; color: #9ca3af;
+    }
+    .hc-add-dep {
+      background: none; border: none; padding: 0;
+      font-size: 13px; font-weight: 500; color: #2563eb;
+      cursor: pointer; font-family: inherit;
+    }
+    .hc-add-dep:hover { color: #1d4ed8; text-decoration: underline; }
+
+    .hc-input {
+      width: 100%; border: none; outline: none; background: transparent;
+      font-size: 14px; font-family: inherit; color: #111827;
+    }
+    .hc-input::placeholder { color: #9ca3af; }
+
+    .hc-select-cell { display: flex; align-items: center; gap: 4px; }
+    .hc-select {
+      border: none; outline: none; background: transparent;
+      font-size: 14px; font-family: inherit; color: #9ca3af;
+      cursor: pointer; appearance: none; -webkit-appearance: none; flex: 1;
+    }
+    .hc-select.filled { color: #111827; }
+    .hc-chevron { color: #374151; font-size: 11px; flex-shrink: 0; }
+
+    /* ── Disabled table cells ── */
+    .td-disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+    }
+    .currency-prefix { color: #9ca3af; margin-right: 2px; flex-shrink: 0; }
+
+    /* Member details table */
+    .md-table-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .md-table-header h2 { font-size: 20px; font-weight: 700; color: #111827; }
+
+    .md-table { width: 100%; border-collapse: collapse; }
+
+    .md-table thead th {
+      text-align: left; font-size: 13px; font-weight: 500; color: #374151;
+      padding: 0 16px 12px; border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .md-table thead th:first-child { width: 60px; padding-left: 0; color: #6b7280; }
+    .md-table thead th.sorted { color: #2563eb; }
+
+    .th-inner { display: inline-flex; align-items: center; gap: 5px; }
+    .sort-icon { font-size: 10px; color: #2563eb; }
+    .filter-icon { font-size: 10px; color: #9ca3af; cursor: pointer; }
+    .filter-icon:hover { color: #6b7280; }
+
+    .md-table tbody tr { border-bottom: 1px solid #e5e7eb; }
+    .md-table tbody tr:hover td { background: #fafafa; }
+
+    .md-table tbody td {
+      padding: 0 16px; height: 52px; vertical-align: middle;
+      font-size: 14px; color: #111827;
+    }
+    .md-table tbody td:first-child { padding-left: 0; color: #9ca3af; font-size: 13px; }
+
+    .md-email-input {
+      border: none; outline: none; background: transparent;
+      font-size: 14px; font-family: inherit; color: #111827;
+      width: 100%;
+    }
+    .md-email-input:placeholder-shown { color: #9ca3af; }
+    .md-email-input::placeholder { color: #9ca3af; }
+
+    .md-select-cell { display: flex; align-items: center; gap: 6px; }
+    .md-select {
+      border: none; outline: none; background: transparent;
+      font-size: 14px; font-family: inherit; color: #111827;
+      cursor: pointer; appearance: none; -webkit-appearance: none;
+      flex: 1; min-width: 0;
+    }
+    .md-chevron { color: #374151; font-size: 11px; flex-shrink: 0; }
+
+    .md-ownership-input {
+      border: none; outline: none; background: transparent;
+      font-size: 14px; font-family: inherit; color: #111827;
+      width: 100%;
+    }
+    .md-ownership-input:placeholder-shown { color: #9ca3af; }
+    .md-ownership-input::placeholder { color: #9ca3af; }
+    .md-dash { color: #9ca3af; }
+  </style>
+</head>
+<body>
+
+  <nav id="nav">
+    <div class="logo">J</div>
+    <div class="breadcrumb">
+      <a href="#">Home</a>
+      <span class="separator">/</span>
+      <span class="current">Company and team</span>
+    </div>
+    <div class="nav-spacer"></div>
+  </nav>
+
+  <div id="app"></div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    const STEPS = {
+      COUNT: 'count', TABLE_PREVIEW: 'table_preview', EMPLOYEE_ENTRY: 'employee_entry',
+      SALARIED: 'salaried', REMOTE: 'remote', EXEMPT: 'exempt',
+      MEMBER_DETAILS: 'member_details', WORK_LOCATION: 'work_location',
+      TITLE_AND_WAGE: 'title_and_wage', HEALTH_CENSUS: 'health_census'
+    };
+    // Full-page stepper steps in order
+    const STEPPER_STEPS = [
+      { key: 'member_details',  label: 'Member details'  },
+      { key: 'work_location',   label: 'Work location'   },
+      { key: 'title_and_wage',  label: 'Title and wage'  },
+      { key: 'health_census',   label: 'Health census'   },
+    ];
+    const DEP_RELATIONSHIPS = ['Spouse', 'Child', 'Domestic Partner', 'Other'];
+    let step = STEPS.COUNT;
+    let teamCount = 0;
+    let currentEmployee = 2;
+    let employees    = {};   // [i] = { first, middle, last }
+    let salaried     = {};   // [i] = true/false
+    let remote       = {};   // [i] = true/false
+    let exempt       = {};   // [i] = true/false
+    let payType      = {};   // [i] = 'Salaried' | 'Hourly'
+    let workLocation = {};   // [i] = 'Remote' | '-'
+    // member details row data: keyed by original employee index
+    let memberData   = {};   // [i] = { email, memberType, payType, ownershipPct }
+    let workLocData  = {};   // [i] = { officeLocation, workState }
+    let titleWageData = {};  // [i] = { jobTitle, annualSalary, hourlyWage, hoursPerWeek, exemptionStatus }
+    let healthData    = {};  // [i] = { sex, dob, zip, dependents: [{rel,first,last,sex,dob,zip}] }
+
+    const navEl = document.getElementById('nav');
+    const appEl = document.getElementById('app');
+
+    const SPARKLE_SVG = `
+      <svg class="icon sparkle-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
+              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M19 15L19.75 17.75L22.5 18.5L19.75 19.25L19 22L18.25 19.25L15.5 18.5L18.25 17.75L19 15Z"
+              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>`;
+
+    const INFO_BANNER = `
+      <div class="info-banner">
+        ${SPARKLE_SVG}
+        <p>We'll create a census table for you to start entering more details. Or
+          <a href="#">upload a census document</a> if you have one.</p>
+      </div>`;
+
+    // ── Helpers ────────────────────────────────────────────
+    function parseName(raw) {
+      const parts = raw.trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return { first: '', middle: '', last: '' };
+      if (parts.length === 1) return { first: parts[0], middle: '', last: '' };
+      if (parts.length === 2) return { first: parts[0], middle: '', last: parts[1] };
+      return { first: parts[0], middle: parts.slice(1, -1).join(' '), last: parts[parts.length - 1] };
+    }
+
+    function escHtml(str) {
+      return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function fullName(emp) {
+      return [emp.first, emp.middle, emp.last].filter(Boolean).join(' ');
+    }
+
+    function applySalaryFormat(input) {
+      const digits    = input.value.replace(/[^0-9]/g, '');
+      const formatted = digits ? Number(digits).toLocaleString('en-US') : '';
+      if (input.value !== formatted) {
+        const distFromEnd = input.value.length - (input.selectionEnd || 0);
+        input.value = formatted;
+        const pos = Math.max(0, formatted.length - distFromEnd);
+        input.setSelectionRange(pos, pos);
+      }
+      return digits; // raw digits for storage
+    }
+
+    function applyDobFormat(input) {
+      const cursor = input.selectionStart;
+      const prev   = input.value;
+      const digits = prev.replace(/\D/g, '').slice(0, 8);
+      let formatted = digits;
+      if (digits.length > 2) formatted = digits.slice(0,2) + '/' + digits.slice(2);
+      if (digits.length > 4) formatted = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4);
+      if (formatted !== prev) {
+        input.value = formatted;
+        // Keep cursor after the last typed character
+        const added = formatted.length - prev.length;
+        input.setSelectionRange(cursor + added, cursor + added);
+      }
+    }
+
+    let sortAsc = true; // true = A→Z, false = Z→A
+
+    function sortedEmployeeIndices() {
+      const indices = Array.from({ length: teamCount }, (_, i) => i + 1);
+      return indices.sort((a, b) => {
+        const ea = employees[a] || {}, eb = employees[b] || {};
+        const lastCmp = (ea.last || '').localeCompare(eb.last || '');
+        const cmp = lastCmp !== 0 ? lastCmp : (ea.first || '').localeCompare(eb.first || '');
+        return sortAsc ? cmp : -cmp;
+      });
+    }
+
+    function wireNameSort(renderFn) {
+      const btn = appEl.querySelector('#sort-name-btn');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        sortAsc = !sortAsc;
+        btn.textContent = sortAsc ? '▾' : '▴';
+        renderFn();
+      });
+    }
+
+    function initMemberData() {
+      for (let i = 1; i <= teamCount; i++) {
+        const isSal = salaried[i] || false;
+        const isOwner = i === 1;
+        memberData[i] = {
+          email: '',
+          memberType: isOwner ? 'Owner-Paid'
+                    : isSal  ? 'Employee - Full time (W2)'
+                    :          'Employee - Part time (W2)',
+          payType: payType[i] || 'Salaried',
+          ownershipPct: ''
+        };
+      }
+    }
+
+    // ── Persistence ───────────────────────────────────────
+    const STORAGE_KEY = 'manual_census_data';
+
+    function saveData() {
+      const snapshot = {
+        step, teamCount, currentEmployee,
+        employees, salaried, remote, exempt,
+        payType, workLocation, memberData, workLocData, titleWageData, healthData
+      };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot)); } catch (e) {}
+    }
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        // Restore data but always start from the beginning of the wizard
+        teamCount       = s.teamCount       || 0;
+        currentEmployee = s.currentEmployee || 2;
+        employees       = s.employees       || {};
+        salaried        = s.salaried        || {};
+        remote          = s.remote          || {};
+        exempt          = s.exempt          || {};
+        payType         = s.payType         || {};
+        workLocation    = s.workLocation    || {};
+        memberData      = s.memberData      || {};
+        workLocData     = s.workLocData     || {};
+        titleWageData   = s.titleWageData   || {};
+        healthData      = s.healthData      || {};
+        return true;
+      } catch (e) { return false; }
+    }
+
+    // ── History-aware navigation ──────────────────────────
+    function navigate(newStep, opts = {}) {
+      step = newStep;
+      if (opts.currentEmployee !== undefined) currentEmployee = opts.currentEmployee;
+      history.pushState({ step, currentEmployee }, '');
+      render();
+    }
+
+    window.addEventListener('popstate', e => {
+      if (e.state) {
+        step = e.state.step || STEPS.COUNT;
+        if (e.state.currentEmployee !== undefined) currentEmployee = e.state.currentEmployee;
+        render();
+      }
+    });
+
+    // ── Nav renderer ──────────────────────────────────────
+    function renderNav() {
+      const showSave = FULL_PAGE_STEPS.includes(step);
+      navEl.querySelector('.nav-spacer')?.remove();
+      navEl.querySelector('.btn-save-continue')?.remove();
+      navEl.querySelector('.btn-nav-back')?.remove();
+      navEl.insertAdjacentHTML('beforeend', `<div class="nav-spacer"></div>${showSave
+        ? '<button class="btn-nav-back" id="nav-back-btn">Back</button><button class="btn-save-continue" id="save-continue-btn">Save &amp; continue</button>'
+        : ''}`);
+      if (showSave) {
+        document.getElementById('nav-back-btn').addEventListener('click', () => history.back());
+        document.getElementById('save-continue-btn').addEventListener('click', () => {
+          if (step === STEPS.MEMBER_DETAILS) {
+            for (let i = 1; i <= teamCount; i++) workLocData[i] = { officeLocation: '', workState: '' };
+            saveData();
+            navigate(STEPS.WORK_LOCATION);
+          } else if (step === STEPS.WORK_LOCATION) {
+            for (let i = 1; i <= teamCount; i++) {
+              titleWageData[i] = { jobTitle: '', annualSalary: '', hourlyWage: '', hoursPerWeek: '',
+                exemptionStatus: exempt[i] ? 'Exempt' : 'Non-exempt' };
+            }
+            saveData();
+            navigate(STEPS.TITLE_AND_WAGE);
+          } else if (step === STEPS.TITLE_AND_WAGE) {
+            for (let i = 1; i <= teamCount; i++) {
+              if (!healthData[i]) healthData[i] = { sex: '', dob: '', zip: '', dependents: [] };
+            }
+            saveData();
+            navigate(STEPS.HEALTH_CENSUS);
+          } else if (step === STEPS.HEALTH_CENSUS) {
+            saveData();
+          }
+        });
+      }
+    }
+
+    const FULL_PAGE_STEPS = [STEPS.MEMBER_DETAILS, STEPS.WORK_LOCATION, STEPS.TITLE_AND_WAGE, STEPS.HEALTH_CENSUS];
+
+    function buildStepper(activeKey) {
+      const activeIdx = STEPPER_STEPS.findIndex(s => s.key === activeKey);
+      return STEPPER_STEPS.map((s, idx) => {
+        const isCompleted = idx < activeIdx;
+        const isActive    = idx === activeIdx;
+        const dotClass    = isCompleted ? 'completed' : isActive ? 'active' : '';
+        const labelClass  = isActive ? 'active' : '';
+        const stepClass   = isCompleted ? 'completed' : '';
+        return `<div class="stepper-step ${stepClass}">
+          <div class="stepper-dot ${dotClass}"></div>
+          <div class="stepper-label ${labelClass}">${s.label}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Main render ────────────────────────────────────────
+    function render() {
+      renderNav();
+      if (step === STEPS.MEMBER_DETAILS) {
+        renderMemberDetails();
+      } else if (step === STEPS.WORK_LOCATION) {
+        renderWorkLocation();
+      } else if (step === STEPS.TITLE_AND_WAGE) {
+        renderTitleAndWage();
+      } else if (step === STEPS.HEALTH_CENSUS) {
+        renderHealthCensus();
+      } else {
+        renderWizard();
+      }
+    }
+
+    // ── Wizard (sidebar + main panel) ─────────────────────
+    function renderWizard() {
+      appEl.innerHTML = `
+        <div class="layout">
+          <aside class="sidebar" id="sidebar"></aside>
+          <main class="main-panel" id="main-panel"></main>
+        </div>`;
+      renderSidebar();
+      renderMainPanel();
+    }
+
+    function renderSidebar() {
+      const sidebar = document.getElementById('sidebar');
+
+      if (step === STEPS.COUNT) {
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>How many people are on your team?</h2>
+            <p class="hint">Don't forget to include yourself.</p>
+            <input id="count-input" class="text-input number" type="number" min="1"
+                   value="${teamCount > 0 ? teamCount : ''}" aria-label="Team size" />
+            <div class="btn-row">
+              <button class="btn-next" id="count-next">Next</button>
+            </div>
+          </div>`;
+        const input = document.getElementById('count-input');
+        document.getElementById('count-next').addEventListener('click', () => {
+          const v = parseInt(input.value, 10);
+          if (!v || v < 1) return;
+          teamCount = v;
+          employees[1] = { first: 'Albert', middle: '', last: 'Flores' };
+          navigate(STEPS.EMPLOYEE_ENTRY, { currentEmployee: 2 });
+        });
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('count-next').click(); });
+
+      } else if (step === STEPS.TABLE_PREVIEW) {
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>How many people are on your team?</h2>
+            <p class="hint">Don't forget to include yourself.</p>
+            <input id="count-input" class="text-input number" type="number" min="1"
+                   value="${teamCount}" aria-label="Team size" />
+            <div class="btn-row">
+              <button class="btn-next" id="count-next">Next</button>
+            </div>
+          </div>`;
+        const input = document.getElementById('count-input');
+        document.getElementById('count-next').addEventListener('click', () => {
+          const v = parseInt(input.value, 10);
+          if (v && v >= 1) teamCount = v;
+          navigate(STEPS.EMPLOYEE_ENTRY, { currentEmployee: 2 });
+        });
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('count-next').click(); });
+
+      } else if (step === STEPS.EMPLOYEE_ENTRY) {
+        const saved = employees[currentEmployee];
+        const savedValue = saved ? [saved.first, saved.middle, saved.last].filter(Boolean).join(' ') : '';
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>Now add your employee's names.</h2>
+            <p class="hint">Add them one at a time, and include first, last, and middle names.</p>
+            <span class="employee-label">Employee ${currentEmployee} of ${teamCount}</span>
+            <input id="emp-input" class="text-input" type="text"
+                   value="${escHtml(savedValue)}" aria-label="Employee name" />
+            <div class="btn-row">
+              <button class="btn-back" id="emp-back">Back</button>
+              <button class="btn-next" id="emp-next">Next</button>
+            </div>
+          </div>`;
+        const empInput = document.getElementById('emp-input');
+        empInput.focus();
+        empInput.addEventListener('input', () => {
+          employees[currentEmployee] = parseName(empInput.value);
+          updateTableRow(currentEmployee);
+        });
+        document.getElementById('emp-next').addEventListener('click', () => {
+          employees[currentEmployee] = parseName(empInput.value);
+          if (currentEmployee < teamCount) navigate(STEPS.EMPLOYEE_ENTRY, { currentEmployee: currentEmployee + 1 });
+          else navigate(STEPS.SALARIED);
+        });
+        document.getElementById('emp-back').addEventListener('click', () => history.back());
+        empInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('emp-next').click(); });
+
+      } else if (step === STEPS.SALARIED) {
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>Select all salaried employees.</h2>
+            <div class="btn-row">
+              <button class="btn-back" id="sal-back">Back</button>
+              <button class="btn-next" id="sal-next">Next</button>
+            </div>
+          </div>`;
+        document.getElementById('sal-next').addEventListener('click', () => {
+          for (let i = 1; i <= teamCount; i++) payType[i] = salaried[i] ? 'Salaried' : 'Hourly';
+          remote = {};
+          navigate(STEPS.REMOTE);
+        });
+        document.getElementById('sal-back').addEventListener('click', () => history.back());
+
+      } else if (step === STEPS.REMOTE) {
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>Select all remote employees.</h2>
+            <div class="btn-row">
+              <button class="btn-back" id="rem-back">Back</button>
+              <button class="btn-next" id="rem-next">Next</button>
+            </div>
+          </div>`;
+        document.getElementById('rem-next').addEventListener('click', () => {
+          for (let i = 1; i <= teamCount; i++) {
+            workLocation[i] = remote[i] ? 'Remote' : '-';
+            exempt[i] = salaried[i] || false;
+          }
+          navigate(STEPS.EXEMPT);
+        });
+        document.getElementById('rem-back').addEventListener('click', () => history.back());
+
+      } else if (step === STEPS.EXEMPT) {
+        sidebar.innerHTML = `
+          ${INFO_BANNER}
+          <div class="form-section">
+            <h2>Finally, select all exempt employees.</h2>
+            <p class="hint">Exempt employees have a fixed salary and are not eligible for overtime.</p>
+            <div class="btn-row">
+              <button class="btn-back" id="ext-back">Back</button>
+              <button class="btn-next" id="ext-next">Next</button>
+            </div>
+          </div>`;
+        document.getElementById('ext-next').addEventListener('click', () => {
+          initMemberData();
+          navigate(STEPS.MEMBER_DETAILS);
+        });
+        document.getElementById('ext-back').addEventListener('click', () => history.back());
+      }
+    }
+
+    function renderMainPanel() {
+      const mainPanel = document.getElementById('main-panel');
+      if (step === STEPS.COUNT) { mainPanel.innerHTML = ''; return; }
+
+      const showCheckboxes   = [STEPS.SALARIED, STEPS.REMOTE, STEPS.EXEMPT].includes(step);
+      const showPayType      = [STEPS.REMOTE, STEPS.EXEMPT].includes(step);
+      const showWorkLocation = step === STEPS.EXEMPT;
+
+      let rowsHtml = '';
+      for (let i = 1; i <= teamCount; i++) {
+        const emp = employees[i] || {};
+        const isYou = i === 1;
+        const isActive = step === STEPS.EMPLOYEE_ENTRY && i === currentEmployee;
+        const isChecked = step === STEPS.SALARIED ? (salaried[i] || false)
+                        : step === STEPS.REMOTE   ? (remote[i]   || false)
+                        :                           (exempt[i]   || false);
+        const middleDisplay = (emp.middle === '' && i === 1) ? '-' : (emp.middle || '');
+
+        const firstColContent = showCheckboxes
+          ? `<div class="row-meta">
+               <input type="checkbox" class="row-checkbox" data-row="${i}" ${isChecked ? 'checked' : ''} />
+               <span class="row-number">${i}</span></div>`
+          : `<div class="row-meta">
+               ${isYou ? '<span class="you-badge">You</span>' : ''}
+               <span class="row-number">${i}</span></div>`;
+
+        rowsHtml += `
+          <tr class="${isActive ? 'active-row' : ''}" data-row="${i}">
+            <td>${firstColContent}</td>
+            <td><input class="cell-input" type="text" value="${escHtml(emp.first || '')}"
+                       data-row="${i}" data-field="first" /></td>
+            <td><input class="cell-input" type="text" value="${escHtml(emp.middle || '')}"
+                       data-row="${i}" data-field="middle" /></td>
+            <td><input class="cell-input" type="text" value="${escHtml(emp.last || '')}"
+                       data-row="${i}" data-field="last" /></td>
+            ${showPayType      ? `<td><span class="cell-text">${escHtml(payType[i] || '')}</span></td>` : ''}
+            ${showWorkLocation ? `<td><span class="cell-text">${escHtml(workLocation[i] || '')}</span></td>` : ''}
+          </tr>`;
+      }
+
+      mainPanel.innerHTML = `
+        <div class="team-table-wrapper">
+          <div class="team-table-header">
+            <h2>Team members</h2>
+            <span class="count-badge">${teamCount}</span>
+          </div>
+          <table class="team-table">
+            <thead><tr>
+              <th style="padding-left:0">
+                ${showCheckboxes ? `
+                  <label class="select-all-label">
+                    <input type="checkbox" class="row-checkbox" id="master-cb" />
+                    <span>Select all</span>
+                  </label>` : ''}
+              </th>
+              <th>Legal first name</th>
+              <th>Legal middle name (optional)</th>
+              <th>Legal last name</th>
+              ${showPayType      ? '<th>Pay type</th>' : ''}
+              ${showWorkLocation ? '<th>Work location</th>' : ''}
+            </tr></thead>
+            <tbody id="team-tbody">${rowsHtml}${step === STEPS.EMPLOYEE_ENTRY ? `
+              <tr id="add-emp-row">
+                <td></td>
+                <td colspan="3">
+                  <button class="add-emp-btn" type="button">+ Add employee</button>
+                </td>
+              </tr>` : ''}</tbody>
+          </table>
+        </div>`;
+
+      if (showCheckboxes) {
+        const masterCb    = mainPanel.querySelector('#master-cb');
+        const rowCbs      = () => [...mainPanel.querySelectorAll('.row-checkbox[data-row]')];
+        const store       = step === STEPS.SALARIED ? salaried : step === STEPS.REMOTE ? remote : exempt;
+
+        function syncMaster() {
+          const boxes = rowCbs();
+          const checkedCount = boxes.filter(c => c.checked).length;
+          masterCb.checked       = checkedCount === boxes.length;
+          masterCb.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+        }
+
+        masterCb.addEventListener('change', () => {
+          rowCbs().forEach(cb => {
+            cb.checked = masterCb.checked;
+            store[parseInt(cb.dataset.row, 10)] = masterCb.checked;
+          });
+        });
+
+        rowCbs().forEach(cb => {
+          cb.addEventListener('change', () => {
+            store[parseInt(cb.dataset.row, 10)] = cb.checked;
+            syncMaster();
+          });
+        });
+
+        syncMaster();
+      }
+
+      // Add employee button
+      const addEmpBtn = mainPanel.querySelector('.add-emp-btn');
+      if (addEmpBtn) {
+        addEmpBtn.addEventListener('click', () => {
+          teamCount++;
+          employees[teamCount] = { first: '', middle: '', last: '' };
+          render();
+        });
+      }
+
+      // Inline name editing
+      mainPanel.querySelectorAll('.cell-input[data-field]').forEach(input => {
+        input.addEventListener('input', () => {
+          const row = parseInt(input.dataset.row, 10);
+          if (!employees[row]) employees[row] = {};
+          employees[row][input.dataset.field] = input.value;
+          // Keep sidebar input in sync if this is the active employee entry row
+          const sidebarInput = document.getElementById('emp-input');
+          if (sidebarInput && step === STEPS.EMPLOYEE_ENTRY && row === currentEmployee) {
+            sidebarInput.value = [employees[row].first, employees[row].middle, employees[row].last]
+              .filter(Boolean).join(' ');
+          }
+        });
+      });
+    }
+
+    function updateTableRow(rowIndex) {
+      const tbody = document.getElementById('team-tbody');
+      if (!tbody) return;
+      const row = tbody.querySelector(`tr[data-row="${rowIndex}"]`);
+      if (!row) return;
+      const emp = employees[rowIndex] || {};
+      const firstInput  = row.querySelector('.cell-input[data-field="first"]');
+      const middleInput = row.querySelector('.cell-input[data-field="middle"]');
+      const lastInput   = row.querySelector('.cell-input[data-field="last"]');
+      if (firstInput)  firstInput.value  = emp.first  || '';
+      if (middleInput) middleInput.value = emp.middle || '';
+      if (lastInput)   lastInput.value   = emp.last   || '';
+    }
+
+    // ── Member details full-page ───────────────────────────
+    function renderMemberDetails() {
+      const sorted = sortedEmployeeIndices();
+
+      const stepperHtml = buildStepper(STEPS.MEMBER_DETAILS);
+
+      const MEMBER_TYPE_OPTIONS = [
+        'Owner-Paid', 'Owner - Not paid',
+        'Employee - Full time (W2)', 'Employee - Part time (W2)',
+        '1099 Contractor'
+      ];
+      const PAY_TYPE_OPTIONS = ['Salaried', 'Hourly'];
+
+      let rowsHtml = '';
+      sorted.forEach((origIdx, sortPos) => {
+        const emp  = employees[origIdx] || {};
+        const md   = memberData[origIdx] || {};
+        const isOwnerType = (md.memberType || '').startsWith('Owner');
+
+        const memberTypeOpts = MEMBER_TYPE_OPTIONS.map(o =>
+          `<option value="${escHtml(o)}" ${md.memberType === o ? 'selected' : ''}>${escHtml(o)}</option>`
+        ).join('');
+        const payTypeOpts = PAY_TYPE_OPTIONS.map(o =>
+          `<option value="${escHtml(o)}" ${md.payType === o ? 'selected' : ''}>${escHtml(o)}</option>`
+        ).join('');
+
+        rowsHtml += `
+          <tr data-orig="${origIdx}">
+            <td>${sortPos + 1}</td>
+            <td><input class="md-email-input" type="text" placeholder="Full name"
+                       value="${escHtml(fullName(emp))}" data-field="empName" data-idx="${origIdx}" /></td>
+            <td><input class="md-email-input" type="email" placeholder="email@email.com"
+                       value="${escHtml(md.email)}" data-field="email" data-idx="${origIdx}" /></td>
+            <td>
+              <div class="md-select-cell">
+                <select class="md-select" data-field="memberType" data-idx="${origIdx}">${memberTypeOpts}</select>
+                <span class="md-chevron">▾</span>
+              </div>
+            </td>
+            <td>
+              <div class="md-select-cell">
+                <select class="md-select" data-field="payType" data-idx="${origIdx}">${payTypeOpts}</select>
+                <span class="md-chevron">▾</span>
+              </div>
+            </td>
+            <td class="ownership-cell" data-idx="${origIdx}">
+              ${isOwnerType
+                ? `<input class="md-ownership-input" type="text" placeholder="e.g., 10%"
+                          value="${escHtml(md.ownershipPct || '')}" data-field="ownershipPct" data-idx="${origIdx}" />`
+                : `<span class="md-dash">-</span>`}
+            </td>
+          </tr>`;
+      });
+
+      appEl.innerHTML = `
+        <div class="member-page">
+          <div class="stepper">${stepperHtml}</div>
+          <div class="flat-banner">Finish filling in your team's info.</div>
+          <div>
+            <div class="md-table-header">
+              <h2>Team members</h2>
+              <span class="count-badge">${teamCount}</span>
+            </div>
+            <table class="md-table">
+              <thead><tr>
+                <th></th>
+                <th class="sorted">
+                  <div class="th-inner">Employee name <button id="sort-name-btn" class="sort-icon" style="background:none;border:none;cursor:pointer;padding:0;font-size:10px;color:#2563eb">${sortAsc?'▾':'▴'}</button></div>
+                </th>
+                <th><div class="th-inner">Work email <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Member type <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Pay type <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Ownership % <span class="filter-icon">▾</span></div></th>
+              </tr></thead>
+              <tbody>${rowsHtml}
+                <tr id="add-emp-row">
+                  <td></td>
+                  <td colspan="5">
+                    <button class="add-emp-btn" type="button" id="md-add-emp-btn">+ Add employee</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+
+      wireNameSort(renderMemberDetails);
+
+      document.getElementById('md-add-emp-btn').addEventListener('click', () => {
+        teamCount++;
+        employees[teamCount] = { first: '', middle: '', last: '' };
+        memberData[teamCount] = {
+          email: '', memberType: 'Employee - Full time (W2)',
+          payType: 'Salaried', ownershipPct: ''
+        };
+        renderMemberDetails();
+      });
+
+      // Wire up live updates
+      appEl.querySelectorAll('.md-email-input, .md-ownership-input').forEach(input => {
+        input.addEventListener('input', () => {
+          const idx   = parseInt(input.dataset.idx, 10);
+          const field = input.dataset.field;
+          if (field === 'empName') {
+            // Parse full name back into first/middle/last
+            const parsed = parseName(input.value);
+            employees[idx] = { ...employees[idx], ...parsed };
+          } else {
+            if (!memberData[idx]) memberData[idx] = {};
+            memberData[idx][field] = input.value;
+          }
+        });
+      });
+      appEl.querySelectorAll('.md-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx   = parseInt(sel.dataset.idx, 10);
+          const field = sel.dataset.field;
+          if (!memberData[idx]) memberData[idx] = {};
+          memberData[idx][field] = sel.value;
+          // Toggle ownership cell when member type changes
+          if (field === 'memberType') {
+            const cell = appEl.querySelector(`.ownership-cell[data-idx="${idx}"]`);
+            if (cell) {
+              const isOwnerType = sel.value.startsWith('Owner');
+              if (isOwnerType && !cell.querySelector('input')) {
+                cell.innerHTML = `<input class="md-ownership-input" type="text" placeholder="e.g., 10%"
+                  value="${escHtml(memberData[idx].ownershipPct || '')}" data-field="ownershipPct" data-idx="${idx}" />`;
+                cell.querySelector('input').addEventListener('input', e => {
+                  memberData[idx].ownershipPct = e.target.value;
+                });
+              } else if (!isOwnerType && !cell.querySelector('.md-dash')) {
+                memberData[idx].ownershipPct = '';
+                cell.innerHTML = `<span class="md-dash">-</span>`;
+              }
+            }
+          }
+        });
+      });
+    }
+
+    // ── Work location full-page ───────────────────────────
+    function renderWorkLocation() {
+      const sorted = sortedEmployeeIndices();
+      const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
+        'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky',
+        'Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri',
+        'Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York',
+        'North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
+        'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia',
+        'Washington','West Virginia','Wisconsin','Wyoming'];
+      const stateOpts = `<option value="">Select</option>` +
+        US_STATES.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+
+      let rowsHtml = '';
+      sorted.forEach((origIdx, sortPos) => {
+        const emp   = employees[origIdx] || {};
+        const wld   = workLocData[origIdx] || {};
+        const isRem = remote[origIdx] || false;
+
+        const officeCell = isRem
+          ? `<td class="td-disabled">-</td>`
+          : `<td>
+               <div class="md-select-cell">
+                 <select class="md-select" data-field="officeLocation" data-idx="${origIdx}">
+                   <option value="">Select</option>
+                   <option value="HQ">HQ</option>
+                   <option value="Branch A">Branch A</option>
+                   <option value="Branch B">Branch B</option>
+                 </select>
+                 <span class="md-chevron">▾</span>
+               </div>
+             </td>`;
+
+        rowsHtml += `
+          <tr data-orig="${origIdx}">
+            <td>${sortPos + 1}</td>
+            <td>${escHtml(fullName(emp))}</td>
+            <td>${isRem ? 'Yes' : 'No'}</td>
+            ${officeCell}
+            <td>
+              <div class="md-select-cell">
+                <select class="md-select" data-field="workState" data-idx="${origIdx}">
+                  ${stateOpts}
+                </select>
+                <span class="md-chevron">▾</span>
+              </div>
+            </td>
+          </tr>`;
+      });
+
+      appEl.innerHTML = `
+        <div class="member-page">
+          <div class="stepper">${buildStepper(STEPS.WORK_LOCATION)}</div>
+          <div class="flat-banner">Finish filling in your team's info.</div>
+          <div>
+            <div class="md-table-header">
+              <h2>Team members</h2>
+              <span class="count-badge">${teamCount}</span>
+            </div>
+            <table class="md-table">
+              <thead><tr>
+                <th></th>
+                <th class="sorted"><div class="th-inner">Employee name <button id="sort-name-btn" class="sort-icon" style="background:none;border:none;cursor:pointer;padding:0;font-size:10px;color:#2563eb">${sortAsc?'▾':'▴'}</button></div></th>
+                <th><div class="th-inner">Remote <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Office location <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Work state <span class="filter-icon">▾</span></div></th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>`;
+
+      wireNameSort(renderWorkLocation);
+      appEl.querySelectorAll('.md-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx   = parseInt(sel.dataset.idx, 10);
+          const field = sel.dataset.field;
+          if (!workLocData[idx]) workLocData[idx] = {};
+          workLocData[idx][field] = sel.value;
+        });
+      });
+    }
+
+    // ── Title and wage full-page ──────────────────────────
+    function renderTitleAndWage() {
+      const sorted = sortedEmployeeIndices();
+
+      let rowsHtml = '';
+      sorted.forEach((origIdx, sortPos) => {
+        const emp   = employees[origIdx] || {};
+        const twd   = titleWageData[origIdx] || {};
+        const isHourly = payType[origIdx] === 'Hourly';
+
+        const displaySalary = twd.annualSalary
+          ? Number(twd.annualSalary).toLocaleString('en-US') : '';
+        const annualCell = isHourly
+          ? `<td class="td-disabled">-</td>`
+          : `<td><div class="md-select-cell">
+               <span class="currency-prefix">$</span>
+               <input class="md-email-input" type="text" inputmode="numeric" placeholder=""
+                      value="${escHtml(displaySalary)}"
+                      data-field="annualSalary" data-idx="${origIdx}" />
+             </div></td>`;
+
+        const hourlyCell = isHourly
+          ? `<td><div class="md-select-cell">
+               <span class="currency-prefix">$</span>
+               <input class="md-email-input" type="number" min="0" step="0.01" placeholder=""
+                      value="${escHtml(twd.hourlyWage || '')}"
+                      data-field="hourlyWage" data-idx="${origIdx}" />
+             </div></td>`
+          : `<td class="td-disabled">-</td>`;
+
+        const hoursCell = isHourly
+          ? `<td><input class="md-email-input" type="number" min="0" max="168" placeholder="30"
+                        value="${escHtml(twd.hoursPerWeek || '')}"
+                        data-field="hoursPerWeek" data-idx="${origIdx}" /></td>`
+          : `<td class="td-disabled">-</td>`;
+
+        const exemptOpts = ['Exempt','Non-exempt'].map(o =>
+          `<option value="${o}" ${twd.exemptionStatus === o ? 'selected' : ''}>${o}</option>`).join('');
+
+        rowsHtml += `
+          <tr data-orig="${origIdx}">
+            <td>${sortPos + 1}</td>
+            <td>${escHtml(fullName(emp))}</td>
+            <td><input class="md-email-input" type="text" placeholder="Job title"
+                       value="${escHtml(twd.jobTitle || '')}"
+                       data-field="jobTitle" data-idx="${origIdx}" /></td>
+            ${annualCell}
+            ${hourlyCell}
+            ${hoursCell}
+            <td>
+              <div class="md-select-cell">
+                <select class="md-select" data-field="exemptionStatus" data-idx="${origIdx}">${exemptOpts}</select>
+                <span class="md-chevron">▾</span>
+              </div>
+            </td>
+          </tr>`;
+      });
+
+      appEl.innerHTML = `
+        <div class="member-page">
+          <div class="stepper">${buildStepper(STEPS.TITLE_AND_WAGE)}</div>
+          <div class="flat-banner">Finish filling in your team's info.</div>
+          <div>
+            <div class="md-table-header">
+              <h2>Team members</h2>
+              <span class="count-badge">${teamCount}</span>
+            </div>
+            <table class="md-table">
+              <thead><tr>
+                <th></th>
+                <th class="sorted"><div class="th-inner">Employee name <button id="sort-name-btn" class="sort-icon" style="background:none;border:none;cursor:pointer;padding:0;font-size:10px;color:#2563eb">${sortAsc?'▾':'▴'}</button></div></th>
+                <th><div class="th-inner">Job title <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Annual Salary <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Hourly wage <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Hours per week <span class="filter-icon">▾</span></div></th>
+                <th><div class="th-inner">Exemption status <span class="filter-icon">▾</span></div></th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>`;
+
+      wireNameSort(renderTitleAndWage);
+      appEl.querySelectorAll('.md-email-input[data-idx]').forEach(input => {
+        input.addEventListener('input', () => {
+          const idx = parseInt(input.dataset.idx, 10);
+          if (!titleWageData[idx]) titleWageData[idx] = {};
+          if (input.dataset.field === 'annualSalary') {
+            titleWageData[idx].annualSalary = applySalaryFormat(input);
+          } else {
+            titleWageData[idx][input.dataset.field] = input.value;
+          }
+        });
+      });
+      appEl.querySelectorAll('.md-select[data-idx]').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const idx = parseInt(sel.dataset.idx, 10);
+          if (!titleWageData[idx]) titleWageData[idx] = {};
+          titleWageData[idx][sel.dataset.field] = sel.value;
+        });
+      });
+    }
+
+    // ── Health census full-page ───────────────────────────
+    function renderHealthCensus() {
+      const sorted = sortedEmployeeIndices();
+
+      function sexOpts(val) {
+        return `<option value="">Select</option>
+          <option value="Male"   ${val==='Male'   ?'selected':''}>Male</option>
+          <option value="Female" ${val==='Female' ?'selected':''}>Female</option>
+          <option value="Other"  ${val==='Other'  ?'selected':''}>Other / Prefer not to say</option>`;
+      }
+      function relOpts(val) {
+        return `<option value="">Select</option>` +
+          DEP_RELATIONSHIPS.map(r => `<option value="${r}" ${val===r?'selected':''}>${r}</option>`).join('');
+      }
+
+      let rowsHtml = '';
+      sorted.forEach((origIdx, sortPos) => {
+        const emp = employees[origIdx] || {};
+        const hd  = healthData[origIdx] || { sex:'', dob:'', zip:'', dependents:[] };
+        const name = fullName(emp);
+        const truncated = name.length > 20 ? name.slice(0, 18) + '…' : name;
+
+        // Employee row
+        rowsHtml += `
+          <tr data-orig="${origIdx}" class="emp-hc-row">
+            <td>${sortPos + 1}</td>
+            <td title="${escHtml(name)}">${escHtml(truncated)}</td>
+            <td class="col-dep">
+              <button class="hc-add-dep" data-idx="${origIdx}">Add dependent</button>
+            </td>
+            <td><input class="hc-input" type="text" placeholder="-"
+                       value="${escHtml(hd.firstName||'')}" data-field="firstName" data-idx="${origIdx}" /></td>
+            <td><input class="hc-input" type="text" placeholder="-"
+                       value="${escHtml(hd.lastName||'')}" data-field="lastName" data-idx="${origIdx}" /></td>
+            <td>
+              <div class="hc-select-cell">
+                <select class="hc-select ${hd.sex?'filled':''}" data-field="sex" data-idx="${origIdx}">${sexOpts(hd.sex)}</select>
+                <span class="hc-chevron">▾</span>
+              </div>
+            </td>
+            <td><input class="hc-input" type="text" placeholder="mm/dd/yyyy"
+                       value="${escHtml(hd.dob||'')}" data-field="dob" data-idx="${origIdx}" /></td>
+            <td><input class="hc-input" type="text" placeholder="12345"
+                       value="${escHtml(hd.zip||'')}" data-field="zip" data-idx="${origIdx}" /></td>
+          </tr>`;
+
+        // Dependent rows
+        (hd.dependents || []).forEach((dep, dIdx) => {
+          rowsHtml += `
+            <tr class="dep-row" data-orig="${origIdx}" data-dep="${dIdx}">
+              <td class="dep-left"></td>
+              <td class="dep-left">-</td>
+              <td class="col-dep">
+                <div class="hc-select-cell">
+                  <select class="hc-select ${dep.rel?'filled':''}" data-field="rel" data-idx="${origIdx}" data-dep="${dIdx}">${relOpts(dep.rel)}</select>
+                  <span class="hc-chevron">▾</span>
+                </div>
+              </td>
+              <td><input class="hc-input" type="text" placeholder="First name"
+                         value="${escHtml(dep.firstName||'')}" data-field="firstName" data-idx="${origIdx}" data-dep="${dIdx}" /></td>
+              <td><input class="hc-input" type="text" placeholder="Last name"
+                         value="${escHtml(dep.lastName||'')}" data-field="lastName" data-idx="${origIdx}" data-dep="${dIdx}" /></td>
+              <td>
+                <div class="hc-select-cell">
+                  <select class="hc-select ${dep.sex?'filled':''}" data-field="sex" data-idx="${origIdx}" data-dep="${dIdx}">${sexOpts(dep.sex)}</select>
+                  <span class="hc-chevron">▾</span>
+                </div>
+              </td>
+              <td><input class="hc-input" type="text" placeholder="mm/dd/yyyy"
+                         value="${escHtml(dep.dob||'')}" data-field="dob" data-idx="${origIdx}" data-dep="${dIdx}" /></td>
+              <td><input class="hc-input" type="text" placeholder="12345"
+                         value="${escHtml(dep.zip||'')}" data-field="zip" data-idx="${origIdx}" data-dep="${dIdx}" /></td>
+            </tr>`;
+        });
+      });
+
+      appEl.innerHTML = `
+        <div class="member-page">
+          <div class="stepper">${buildStepper(STEPS.HEALTH_CENSUS)}</div>
+          <div class="warning-banner">
+            <span class="warn-icon">⚠️</span>
+            <p>Make sure to include all team members and their dependents for an accurate quote.</p>
+            <button class="btn-skip">Skip Health Insurance quote</button>
+          </div>
+          <div>
+            <div class="md-table-header">
+              <h2>Team members</h2>
+              <span class="count-badge">${teamCount}</span>
+            </div>
+            <table class="hc-table">
+              <thead><tr>
+                <th></th>
+                <th class="col-name"><div class="th-inner">Employee name <button id="sort-name-btn" class="sort-icon" style="background:none;border:none;cursor:pointer;padding:0;font-size:10px;color:#2563eb">${sortAsc?'▾':'▴'}</button></div></th>
+                <th class="col-dep"><div class="th-inner">Dependents <span class="filter-icon">▾</span></div></th>
+                <th class="col-fname"><div class="th-inner">Legal first name <span class="filter-icon">▾</span></div></th>
+                <th class="col-lname"><div class="th-inner">Legal last name <span class="filter-icon">▾</span></div></th>
+                <th class="col-sex"><div class="th-inner">Sex <span class="filter-icon">▾</span></div></th>
+                <th class="col-dob"><div class="th-inner">Date of birth <span class="filter-icon">▾</span></div></th>
+                <th class="col-zip"><div class="th-inner">Home zip <span class="filter-icon">▾</span></div></th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>`;
+
+      wireNameSort(renderHealthCensus);
+
+      // Add dependent buttons
+      appEl.querySelectorAll('.hc-add-dep').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          if (!healthData[idx]) healthData[idx] = { sex:'', dob:'', zip:'', dependents:[] };
+          healthData[idx].dependents.push({ rel:'', firstName:'', lastName:'', sex:'', dob:'', zip:'' });
+          renderHealthCensus();
+        });
+      });
+
+      // Employee field updates
+      appEl.querySelectorAll('.emp-hc-row input[data-idx], .emp-hc-row select[data-idx]').forEach(el => {
+        el.addEventListener('change', () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          healthData[idx][el.dataset.field] = el.value;
+          if (el.tagName === 'SELECT') el.classList.toggle('filled', !!el.value);
+        });
+        el.addEventListener('input', () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          if (el.dataset.field === 'dob') applyDobFormat(el);
+          healthData[idx][el.dataset.field] = el.value;
+        });
+      });
+
+      // Dependent field updates
+      appEl.querySelectorAll('.dep-row input[data-dep], .dep-row select[data-dep]').forEach(el => {
+        const update = () => {
+          const idx  = parseInt(el.dataset.idx, 10);
+          const dIdx = parseInt(el.dataset.dep, 10);
+          if (el.dataset.field === 'dob') applyDobFormat(el);
+          if (healthData[idx] && healthData[idx].dependents[dIdx]) {
+            healthData[idx].dependents[dIdx][el.dataset.field] = el.value;
+          }
+          if (el.tagName === 'SELECT') el.classList.toggle('filled', !!el.value);
+        };
+        el.addEventListener('change', update);
+        el.addEventListener('input', update);
+      });
+    }
+
+    // ── Boot ──────────────────────────────────────────────
+    localStorage.removeItem(STORAGE_KEY); // start fresh
+    step = STEPS.COUNT;
+    teamCount = 0;
+    history.replaceState({ step: STEPS.COUNT, currentEmployee: 2 }, '');
+    render();
+  </script>
+</body>
+</html>
