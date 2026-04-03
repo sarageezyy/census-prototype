@@ -287,6 +287,7 @@
     }
     .hc-table tbody td:first-child { padding-left: 0; color: #9ca3af; font-size: 13px; }
     .hc-table tbody td.col-dep { border-right: 1px solid #d1d5db; }
+    .hc-name-static { color: #9ca3af; font-size: 14px; }
 
     /* Dependent sub-rows */
     .hc-table tbody tr.dep-row td.dep-left {
@@ -374,6 +375,19 @@
     .md-ownership-input:placeholder-shown { color: #9ca3af; }
     .md-ownership-input::placeholder { color: #9ca3af; }
     .md-dash { color: #9ca3af; }
+
+    /* ── Validation ── */
+    .field-error {
+      outline: 2px solid #ef4444 !important;
+      outline-offset: 2px;
+      border-radius: 3px;
+      background: #fff5f5 !important;
+    }
+    .validation-toast {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 6px; padding: 10px 16px;
+      font-size: 13px; color: #dc2626; flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -554,6 +568,93 @@
       } catch (e) { return false; }
     }
 
+    // ── Validation ────────────────────────────────────────
+    function markInvalid(el) {
+      el.classList.add('field-error');
+      ['input','change'].forEach(evt =>
+        el.addEventListener(evt, () => el.classList.remove('field-error'), { once: true }));
+    }
+
+    function showErrors(errors) {
+      appEl.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+      let toast = appEl.querySelector('.validation-toast');
+      if (errors.length === 0) { toast?.remove(); return true; }
+      errors.forEach(markInvalid);
+      errors[0].focus();
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'validation-toast';
+        const page = appEl.querySelector('.member-page');
+        const table = page?.querySelector(':scope > div:last-child');
+        if (table) page.insertBefore(toast, table);
+      }
+      toast.textContent = `Please fill in all required fields — ${errors.length} still missing.`;
+      return false;
+    }
+
+    function collectEmpty(selectors) {
+      const errors = [];
+      selectors.forEach(sel =>
+        appEl.querySelectorAll(sel).forEach(el => {
+          if (!el.value.trim()) errors.push(el);
+        }));
+      return errors;
+    }
+
+    function validateMemberDetails() {
+      const errors = collectEmpty([
+        'input[data-field="empName"]',
+        'input[data-field="email"]',
+      ]);
+      appEl.querySelectorAll('.ownership-cell[data-idx]').forEach(cell => {
+        const idx = parseInt(cell.dataset.idx, 10);
+        if ((memberData[idx]?.memberType || '').startsWith('Owner')) {
+          const inp = cell.querySelector('input');
+          if (inp && !inp.value.trim()) errors.push(inp);
+        }
+      });
+      return errors;
+    }
+
+    function validateWorkLocation() {
+      return collectEmpty([
+        'select[data-field="officeLocation"]',
+        'select[data-field="workState"]',
+      ]);
+    }
+
+    function validateTitleAndWage() {
+      return collectEmpty([
+        'input[data-field="jobTitle"]',
+        'input[data-field="annualSalary"]',
+        'input[data-field="hourlyWage"]',
+        'input[data-field="hoursPerWeek"]',
+      ]);
+    }
+
+    function validateHealthCensus() {
+      const errors = [];
+      appEl.querySelectorAll('.emp-hc-row').forEach(row => {
+        ['dob','zip'].forEach(f => {
+          const el = row.querySelector(`input[data-field="${f}"]`);
+          if (el && !el.value.trim()) errors.push(el);
+        });
+        const sex = row.querySelector('select[data-field="sex"]');
+        if (sex && !sex.value) errors.push(sex);
+      });
+      appEl.querySelectorAll('.dep-row').forEach(row => {
+        ['firstName','lastName','dob','zip'].forEach(f => {
+          const el = row.querySelector(`input[data-field="${f}"]`);
+          if (el && !el.value.trim()) errors.push(el);
+        });
+        ['rel','sex'].forEach(f => {
+          const el = row.querySelector(`select[data-field="${f}"]`);
+          if (el && !el.value) errors.push(el);
+        });
+      });
+      return errors;
+    }
+
     // ── History-aware navigation ──────────────────────────
     function navigate(newStep, opts = {}) {
       step = newStep;
@@ -583,10 +684,12 @@
         document.getElementById('nav-back-btn').addEventListener('click', () => history.back());
         document.getElementById('save-continue-btn').addEventListener('click', () => {
           if (step === STEPS.MEMBER_DETAILS) {
+            if (!showErrors(validateMemberDetails())) return;
             for (let i = 1; i <= teamCount; i++) workLocData[i] = { officeLocation: '', workState: '' };
             saveData();
             navigate(STEPS.WORK_LOCATION);
           } else if (step === STEPS.WORK_LOCATION) {
+            if (!showErrors(validateWorkLocation())) return;
             for (let i = 1; i <= teamCount; i++) {
               titleWageData[i] = { jobTitle: '', annualSalary: '', hourlyWage: '', hoursPerWeek: '',
                 exemptionStatus: exempt[i] ? 'Exempt' : 'Non-exempt' };
@@ -594,12 +697,14 @@
             saveData();
             navigate(STEPS.TITLE_AND_WAGE);
           } else if (step === STEPS.TITLE_AND_WAGE) {
+            if (!showErrors(validateTitleAndWage())) return;
             for (let i = 1; i <= teamCount; i++) {
               if (!healthData[i]) healthData[i] = { sex: '', dob: '', zip: '', dependents: [] };
             }
             saveData();
             navigate(STEPS.HEALTH_CENSUS);
           } else if (step === STEPS.HEALTH_CENSUS) {
+            if (!showErrors(validateHealthCensus())) return;
             saveData();
           }
         });
@@ -658,7 +763,7 @@
           ${INFO_BANNER}
           <div class="form-section">
             <h2>How many people are on your team?</h2>
-            <p class="hint">Don't forget to include yourself.</p>
+            <p class="hint">Exclude yourself—we got you already!</p>
             <input id="count-input" class="text-input number" type="number" min="1"
                    value="${teamCount > 0 ? teamCount : ''}" aria-label="Team size" />
             <div class="btn-row">
@@ -680,7 +785,7 @@
           ${INFO_BANNER}
           <div class="form-section">
             <h2>How many people are on your team?</h2>
-            <p class="hint">Don't forget to include yourself.</p>
+            <p class="hint">Exclude yourself—we got you already!</p>
             <input id="count-input" class="text-input number" type="number" min="1"
                    value="${teamCount}" aria-label="Team size" />
             <div class="btn-row">
@@ -718,7 +823,9 @@
           updateTableRow(currentEmployee);
         });
         document.getElementById('emp-next').addEventListener('click', () => {
-          employees[currentEmployee] = parseName(empInput.value);
+          const parsed = parseName(empInput.value);
+          if (!parsed.first) { markInvalid(empInput); return; }
+          employees[currentEmployee] = parsed;
           if (currentEmployee < teamCount) navigate(STEPS.EMPLOYEE_ENTRY, { currentEmployee: currentEmployee + 1 });
           else navigate(STEPS.SALARIED);
         });
@@ -1276,10 +1383,8 @@
             <td class="col-dep">
               <button class="hc-add-dep" data-idx="${origIdx}">Add dependent</button>
             </td>
-            <td><input class="hc-input" type="text" placeholder="-"
-                       value="${escHtml(hd.firstName||'')}" data-field="firstName" data-idx="${origIdx}" /></td>
-            <td><input class="hc-input" type="text" placeholder="-"
-                       value="${escHtml(hd.lastName||'')}" data-field="lastName" data-idx="${origIdx}" /></td>
+            <td class="td-disabled"></td>
+            <td class="td-disabled"></td>
             <td>
               <div class="hc-select-cell">
                 <select class="hc-select ${hd.sex?'filled':''}" data-field="sex" data-idx="${origIdx}">${sexOpts(hd.sex)}</select>
