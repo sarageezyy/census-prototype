@@ -410,7 +410,7 @@
       COUNT: 'count', TABLE_PREVIEW: 'table_preview', EMPLOYEE_ENTRY: 'employee_entry',
       SALARIED: 'salaried', REMOTE: 'remote', EXEMPT: 'exempt',
       MEMBER_DETAILS: 'member_details', WORK_LOCATION: 'work_location',
-      TITLE_AND_WAGE: 'title_and_wage', HEALTH_CENSUS: 'health_census'
+      TITLE_AND_WAGE: 'title_and_wage', HEALTH_CENSUS: 'health_census', END: 'end'
     };
     // Full-page stepper steps in order
     const STEPPER_STEPS = [
@@ -706,12 +706,20 @@
           } else if (step === STEPS.HEALTH_CENSUS) {
             if (!showErrors(validateHealthCensus())) return;
             saveData();
+            navigate(STEPS.END);
           }
         });
       }
     }
 
     const FULL_PAGE_STEPS = [STEPS.MEMBER_DETAILS, STEPS.WORK_LOCATION, STEPS.TITLE_AND_WAGE, STEPS.HEALTH_CENSUS];
+
+    function renderEnd() {
+      appEl.innerHTML = `
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+          <p style="font-size:24px;font-weight:700;color:#111827;">End of this task.</p>
+        </div>`;
+    }
 
     function buildStepper(activeKey) {
       const activeIdx = STEPPER_STEPS.findIndex(s => s.key === activeKey);
@@ -739,6 +747,8 @@
         renderTitleAndWage();
       } else if (step === STEPS.HEALTH_CENSUS) {
         renderHealthCensus();
+      } else if (step === STEPS.END) {
+        renderEnd();
       } else {
         renderWizard();
       }
